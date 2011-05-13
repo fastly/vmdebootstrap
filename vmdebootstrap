@@ -1,0 +1,221 @@
+#!/usr/bin/python
+# Copyright 2011  Lars Wirzenius
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import cliapp
+import logging
+import os
+import re
+import shutil
+import subprocess
+import tempfile
+
+
+class VmDebootstrap(cliapp.Application):
+
+    def add_settings(self):
+        default_arch = 'amd64'
+
+        self.settings.add_boolean_setting(['verbose'], 
+                                          'report what is going on')
+        self.settings.add_string_setting(['image'],
+                                         'put created disk image in FILE',
+                                         metavar='FILE')
+        self.settings.add_bytesize_setting(['size'],
+                                           'create a disk image of size SIZE '
+                                            '(%default)',
+                                           metavar='SIZE',
+                                           default='1G')
+        self.settings.add_string_setting(['mirror'],
+                                         'use MIRROR as package source '
+                                            '(%default)',
+                                     default='http://cdn.debian.net/debian/')
+        self.settings.add_string_setting(['arch'],
+                                         'architecture to use '
+                                            '(%default)',
+                                         metavar='ARCH',
+                                         default=default_arch)
+        self.settings.add_string_setting(['distribution'],
+                                         'release to use (%default)',
+                                         metavar='NAME',
+                                         default='stable')
+
+    def process_args(self, args):
+        if not self.settings['image']:
+            raise cliapp.AppException('You must give image filename.')
+        if not self.settings['size']:
+            raise cliapp.AppException('You must give image size.')
+
+        self.remove_dirs = []
+        self.mount_points = []
+
+        try:
+            self.create_empty_image()
+            self.partition_image()
+            self.install_mbr()
+            rootdev = self.setup_kpartx()
+            self.mkfs(rootdev)
+            rootdir = self.mount(rootdev)
+            self.debootstrap(rootdir)
+            self.set_root_password(rootdir)
+            self.install_extlinux(rootdev, rootdir)
+        except:
+            self.cleanup()
+            raise
+        else:
+            self.cleanup()
+
+    def message(self, msg):
+        if self.settings['verbose']:
+            print msg
+
+    def runcmd(self, argv, stdin='', ignore_fail=False, **kwargs):
+        logging.debug('runcmd: %s %s' % (argv, kwargs))
+        p = subprocess.Popen(argv, stdin=subprocess.PIPE, 
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                             **kwargs)
+        out, err = p.communicate(stdin)
+        if p.returncode != 0:
+            msg = 'command failed: %s\n%s' % (argv, err)
+            logging.error(msg)
+            if not ignore_fail:
+                raise cliapp.AppException(msg)
+        return out
+
+    def mkdtemp(self):
+        dirname = tempfile.mkdtemp()
+        self.remove_dirs.append(dirname)
+        logging.debug('mkdir %s' % dirname)
+        return dirname
+    
+    def mount(self, device):
+        self.message('Mounting %s' % device)
+        mount_point = self.mkdtemp()
+        self.runcmd(['mount', device, mount_point])
+        self.mount_points.append(mount_point)
+        logging.debug('mounted %s on %s' % (device, mount_point))
+        return mount_point
+
+    def create_empty_image(self):
+        self.message('Creating disk image')
+        self.runcmd(['qemu-img', 'create', '-f', 'raw', 
+                     self.settings['image'],
+                     str(self.settings['size'])])
+
+    def partition_image(self):
+        self.message('Creating partitions')
+        self.runcmd(['parted', '-s', self.settings['image'],
+                     'mklabel', 'msdos'])
+        self.runcmd(['parted', '-s', self.settings['image'],
+                     'mkpart', 'primary', '0%', '100%'])
+        self.runcmd(['parted', '-s', self.settings['image'],
+                     'set', '1', 'boot', 'on'])
+
+    def install_mbr(self):
+        self.message('Installing MBR')
+        self.runcmd(['install-mbr', self.settings['image']])
+
+    def setup_kpartx(self):
+        out = self.runcmd(['kpartx', '-av', self.settings['image']])
+        devices = [line.split()[2]
+                   for line in out.splitlines()
+                   if line.startswith('add map ')]
+        if len(devices) != 1:
+            raise cliapp.AppException('Surprising number of partitions')
+        return '/dev/mapper/%s' % devices[0]
+
+    def mkfs(self, device):
+        self.message('Creating filesystem')
+        self.runcmd(['mkfs', '-t', 'ext2', device])
+    
+    def debootstrap(self, rootdir):
+        self.message('Debootstrapping')
+
+        if self.settings['arch'] == 'i386':
+            kernel_arch = 'i686'
+        else:
+            kernel_arch = self.settings['arch']
+        kernel_image = 'linux-image-2.6-%s' % kernel_arch
+
+        include = [kernel_image]
+
+        self.runcmd(['debootstrap', 
+                     '--arch=%s' % self.settings['arch'],
+                     '--include=%s' % ','.join(include),
+                     self.settings['distribution'],
+                     rootdir, 
+                     self.settings['mirror']])
+
+    def set_root_password(self, rootdir):
+        self.message('Removing root password')
+        self.runcmd(['chroot', rootdir, 'passwd', '-d', 'root'])
+
+    def install_extlinux(self, rootdev, rootdir):
+        self.message('Installing extlinux')
+
+        def find(pattern):
+            dirname = os.path.join(rootdir, 'boot')
+            basenames = os.listdir(dirname)
+            logging.debug('find: %s' % basenames)
+            for basename in basenames:
+                if re.search(pattern, basename):
+                    return os.path.join('boot', basename)
+            raise cliapp.AppException('Cannot find match: %s' % pattern)
+
+        kernel_image = find('vmlinuz-.*')
+        initrd_image = find('initrd.img-.*')
+
+        out = self.runcmd(['blkid', '-c', '/dev/null', '-o', 'value',
+                           '-s', 'UUID', rootdev])
+        uuid = out.splitlines()[0].strip()
+
+        conf = os.path.join(rootdir, 'extlinux.conf')
+        logging.debug('configure extlinux %s' % conf)
+        f = open(conf, 'w')
+        f.write('''
+default linux
+timeout 1
+
+label linux
+kernel %(kernel)s
+append initrd=%(initrd)s root=UUID=%(uuid)s ro
+''' % {
+    'kernel': kernel_image,
+    'initrd': initrd_image,
+    'uuid': uuid,
+})
+        f.close()
+
+        self.runcmd(['extlinux', '--install', rootdir])
+        self.runcmd(['sync'])
+        import time; time.sleep(2)
+        
+    def cleanup(self):
+        # Clean up after any errors.
+
+        self.message('Cleaning up')
+
+        for mount_point in self.mount_points:
+            self.runcmd(['umount', mount_point], ignore_fail=True)
+
+        self.runcmd(['kpartx', '-d', self.settings['image']], ignore_fail=True)
+        
+        for dirname in self.remove_dirs:
+            shutil.rmtree(dirname)
+
+
+if __name__ == '__main__':
+    VmDebootstrap().run()
+
