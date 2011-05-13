@@ -38,6 +38,23 @@ is a wrapper around
 You need to run
 .B vmdebootstrap
 as root.
+.PP
+To use the image,
+you probably want to create a virtual machine using your preferred
+virtualization technology, such as 
+.BR kvm (1),
+or
+.BR qemu (1).
+Configure the virtual machine to use the image you've created.
+Then start the virtual machine,
+and log into it via its console to configure it.
+.PP
+The image will be using
+.BR extlinux (1)
+as a boot loader.
+It has an empty root password.
+The image will not have networking configured.
+Set the root password before you configure networking.
 .SH OPTIONS
 .TP
 .BR \-\-help
