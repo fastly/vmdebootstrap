@@ -1,0 +1,103 @@
+.\" Copyright 2011 Lars Wirzenius <liw@liw.fi>
+.\" 
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.TH VMDEBOOTSTRAP 8
+.SH NAME
+vmdebootstrap \- install basic Debian system into virtual disk image
+.SH SYNOPSIS
+.B vmdebootstrap
+.BR \-\-image =\fIFILE
+.RB [ options ]
+.SH DESCRIPTION
+.B vmdebootstrap
+installs a basic Debian system into a virtual disk image,
+for use with virtual machines,
+such as KVM, Qemu, or VirtualBox.
+It is like
+.BR debootstrap (8),
+which does the same thing, but puts the system into a directory,
+for use with
+.BR chroot (8).
+(In fact,
+.B vmdebootstrap
+is a wrapper around
+.BR debootstrap ).
+.PP
+You need to run
+.B vmdebootstrap
+as root.
+.SH OPTIONS
+.TP
+.BR \-\-help
+Show full list of options (this manual page may be incomplete).
+.TP
+.BR \-\-verbose
+Report what is going on.
+.TP
+.BR \-\-log =\fIFILE
+Write log to 
+.IR FILE .
+.TP
+.BR \-\-log\-level =\fILEVEL
+Write log messages of the given
+.I LEVEL
+or higher.
+Level is one of 
+.IR debug ,
+.IR info ,
+.IR warning ,
+.IR error ,
+.IR critical ,
+.IR fatal ,
+and defaults to
+.IR info .
+.TP
+.BR \-\-image =\fIFILE
+Put created disk image in
+.IR FILE .
+.TP
+.BR \-\-size =\fISIZE
+Create a disk image of the given
+.IR SIZE ,
+which can be given in bytes,
+kilobytes,
+gigabytes,
+etc,
+using the appropriate suffix.
+.TP
+.BR \-\-mirror =\fIURL
+Use the Debian mirror at
+.IR URL .
+You probably want to specify a local mirror, if you have one.
+Defaults to
+.IR http://cdn.debian.net/debian/ ,
+which should work fairly well for most people without a local mirror.
+.TP
+.BR \-\-arch =\fIARCH
+Use a given architecture.
+This only works if the host system can run binaries for the architecture,
+e.g., you can build an i386 image on amd64, but not arm.
+.TP
+.BR \-\-distribution =\fINAME
+Use a given release of Debian.
+.SH EXAMPLE
+To create an image for the stable release of Debian:
+.nf
+.IP
+sudo ./vmdebootstrap --image test.img --size 1g \\
+    --log test.log --log-level debug --verbose \\
+    --mirror http://mirror.lan/debian/
+.SH "SEE ALSO"
+.BR debootstrap (8).
