@@ -60,6 +60,9 @@ class VmDebootstrap(cliapp.Application):
         self.settings.add_string_setting(['root-password'],
                                          'set root password',
                                          metavar='PASSWORD')
+        self.settings.add_string_setting(['customize'],
+                                         'run SCRIPT after setting up system',
+                                         metavar='SCRIPT')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -82,6 +85,7 @@ class VmDebootstrap(cliapp.Application):
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
             self.install_extlinux(rootdev, rootdir)
+            self.customize(rootdir)
         except:
             self.cleanup()
             raise
@@ -255,6 +259,12 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet
         
         for dirname in self.remove_dirs:
             shutil.rmtree(dirname)
+
+    def customize(self, rootdir):
+        script = self.settings['customize']
+        if script:
+            self.message('Running customize script %s' % script)
+            self.runcmd([script, rootdir])
 
 
 if __name__ == '__main__':

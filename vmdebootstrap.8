@@ -127,6 +127,14 @@ Without DHCP, only localhost networking is set up.
 .BR \-\-root\-password =\fIPASSWORD
 Set password for root.
 The default is to disable root's password.
+.TP
+.BR \-\-customize =\fISCRIPT
+Run
+.I SCRIPT
+(typically, but not necessarily, a shell script)
+after setting up the new system image.
+The script will get a single parameters:
+the path to the root directory of the newly installed system.
 .SH EXAMPLE
 To create an image for the stable release of Debian:
 .nf
