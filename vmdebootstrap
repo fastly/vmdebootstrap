@@ -54,6 +54,8 @@ class VmDebootstrap(cliapp.Application):
                                          default='stable')
         self.settings.add_string_list_setting(['package'],
                                               'install PACKAGE onto system')
+        self.settings.add_boolean_setting(['enable-dhcp'],
+                                          'enable DHCP on eth0')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -74,6 +76,7 @@ class VmDebootstrap(cliapp.Application):
             self.debootstrap(rootdir)
             self.set_root_password(rootdir)
             self.remove_udev_persistent_rules(rootdir)
+            self.setup_networking(rootdir)
             self.install_extlinux(rootdev, rootdir)
         except:
             self.cleanup()
@@ -175,6 +178,20 @@ class VmDebootstrap(cliapp.Application):
                 os.remove(pathname)
             else:
                 logging.debug('not removing non-existent %s' % pathname)
+
+    def setup_networking(self, rootdir):
+        self.message('Setting up networking')
+        
+        f = open(os.path.join(rootdir, 'etc', 'network', 'interfaces'), 'w')
+        f.write('auto lo\n')
+        f.write('iface lo inet loopback\n')
+        
+        if self.settings['enable-dhcp']:
+            f.write('\n')
+            f.write('allow-hotplug eth0\n')
+            f.write('iface eth0 inet dhcp\n')
+            
+        f.close()
 
     def install_extlinux(self, rootdev, rootdir):
         self.message('Installing extlinux')

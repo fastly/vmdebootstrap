@@ -115,6 +115,13 @@ Install
 .I PACKAGE
 on the system.
 Can be given multiple times.
+.TP
+.BR \-\-enable-dhcp
+Create an
+.I /etc/network/interfaces
+file that sets up DHCP on the eth0 interface.
+This means the system booted from the image will bring up networking
+automatically in typical environments.
 .SH EXAMPLE
 To create an image for the stable release of Debian:
 .nf
