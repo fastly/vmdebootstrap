@@ -73,6 +73,7 @@ class VmDebootstrap(cliapp.Application):
             rootdir = self.mount(rootdev)
             self.debootstrap(rootdir)
             self.set_root_password(rootdir)
+            self.remove_udev_persistent_rules(rootdir)
             self.install_extlinux(rootdev, rootdir)
         except:
             self.cleanup()
@@ -164,6 +165,16 @@ class VmDebootstrap(cliapp.Application):
     def set_root_password(self, rootdir):
         self.message('Removing root password')
         self.runcmd(['chroot', rootdir, 'passwd', '-d', 'root'])
+        
+    def remove_udev_persistent_rules(self, rootdir):
+        self.message('Removing udev persistent cd and net rules')
+        for x in ['70-persistent-cd.rules', '70-persistent-net.rules']:
+            pathname = os.path.join(rootdir, 'etc', 'udev', 'rules.d', x)
+            if os.path.exists(pathname):
+                logging.debug('rm %s' % pathname)
+                os.remove(pathname)
+            else:
+                logging.debug('not removing non-existent %s' % pathname)
 
     def install_extlinux(self, rootdev, rootdir):
         self.message('Installing extlinux')
