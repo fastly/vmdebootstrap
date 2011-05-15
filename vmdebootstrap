@@ -193,7 +193,7 @@ timeout 1
 
 label linux
 kernel %(kernel)s
-append initrd=%(initrd)s root=UUID=%(uuid)s ro
+append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet
 ''' % {
     'kernel': kernel_image,
     'initrd': initrd_image,
