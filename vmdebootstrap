@@ -63,6 +63,10 @@ class VmDebootstrap(cliapp.Application):
         self.settings.add_string_setting(['customize'],
                                          'run SCRIPT after setting up system',
                                          metavar='SCRIPT')
+        self.settings.add_string_setting(['hostname'],
+                                         'set name to HOSTNAME (%default)',
+                                         metavar='HOSTNAME',
+                                         default='debian')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -81,6 +85,7 @@ class VmDebootstrap(cliapp.Application):
             self.mkfs(rootdev)
             rootdir = self.mount(rootdev)
             self.debootstrap(rootdir)
+            self.set_hostname(rootdir)
             self.set_root_password(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
@@ -172,6 +177,12 @@ class VmDebootstrap(cliapp.Application):
                      self.settings['distribution'],
                      rootdir, 
                      self.settings['mirror']])
+
+    def set_hostname(self, rootdir):
+        hostname = self.settings['hostname']
+        f = open(os.path.join(rootdir, 'etc', 'hostname'), 'w')
+        f.write(hostname)
+        f.close()
 
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
