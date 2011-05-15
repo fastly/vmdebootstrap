@@ -52,6 +52,8 @@ class VmDebootstrap(cliapp.Application):
                                          'release to use (%default)',
                                          metavar='NAME',
                                          default='stable')
+        self.settings.add_string_list_setting(['package'],
+                                              'install PACKAGE onto system')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -150,7 +152,7 @@ class VmDebootstrap(cliapp.Application):
             kernel_arch = self.settings['arch']
         kernel_image = 'linux-image-2.6-%s' % kernel_arch
 
-        include = [kernel_image]
+        include = [kernel_image] + self.settings['package']
 
         self.runcmd(['debootstrap', 
                      '--arch=%s' % self.settings['arch'],
