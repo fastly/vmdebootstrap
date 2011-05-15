@@ -91,7 +91,7 @@ class VmDebootstrap(cliapp.Application):
                              **kwargs)
         out, err = p.communicate(stdin)
         if p.returncode != 0:
-            msg = 'command failed: %s\n%s' % (argv, err)
+            msg = 'command failed: %s\n%s\n%s' % (argv, out, err)
             logging.error(msg)
             if not ignore_fail:
                 raise cliapp.AppException(msg)
