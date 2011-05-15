@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cliapp
+import crypt
 import logging
 import os
 import re
@@ -56,6 +57,9 @@ class VmDebootstrap(cliapp.Application):
                                               'install PACKAGE onto system')
         self.settings.add_boolean_setting(['enable-dhcp'],
                                           'enable DHCP on eth0')
+        self.settings.add_string_setting(['root-password'],
+                                         'set root password',
+                                         metavar='PASSWORD')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -166,8 +170,14 @@ class VmDebootstrap(cliapp.Application):
                      self.settings['mirror']])
 
     def set_root_password(self, rootdir):
-        self.message('Removing root password')
-        self.runcmd(['chroot', rootdir, 'passwd', '-d', 'root'])
+        if self.settings['root-password']:
+            self.message('Setting root password')
+            encrypted = crypt.crypt(self.settings['root-password'], '..')
+            self.runcmd(['chroot', rootdir, 'usermod', '-p', encrypted, 
+                         'root'])
+        else:
+            self.message('Locking root password')
+            self.runcmd(['chroot', rootdir, 'passwd', '-l', 'root'])
         
     def remove_udev_persistent_rules(self, rootdir):
         self.message('Removing udev persistent cd and net rules')
