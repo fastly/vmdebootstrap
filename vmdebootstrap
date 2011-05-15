@@ -275,7 +275,7 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet
         script = self.settings['customize']
         if script:
             self.message('Running customize script %s' % script)
-            self.runcmd(['sh', '-c', script, rootdir])
+            self.runcmd([script, rootdir])
 
 
 if __name__ == '__main__':
