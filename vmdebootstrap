@@ -29,44 +29,35 @@ class VmDebootstrap(cliapp.Application):
     def add_settings(self):
         default_arch = 'amd64'
 
-        self.settings.add_boolean_setting(['verbose'], 
-                                          'report what is going on')
-        self.settings.add_string_setting(['image'],
-                                         'put created disk image in FILE',
-                                         metavar='FILE')
-        self.settings.add_bytesize_setting(['size'],
-                                           'create a disk image of size SIZE '
-                                            '(%default)',
-                                           metavar='SIZE',
-                                           default='1G')
-        self.settings.add_string_setting(['mirror'],
-                                         'use MIRROR as package source '
-                                            '(%default)',
-                                         metavar='URL',
-                                     default='http://cdn.debian.net/debian/')
-        self.settings.add_string_setting(['arch'],
-                                         'architecture to use '
-                                            '(%default)',
-                                         metavar='ARCH',
-                                         default=default_arch)
-        self.settings.add_string_setting(['distribution'],
-                                         'release to use (%default)',
-                                         metavar='NAME',
-                                         default='stable')
-        self.settings.add_string_list_setting(['package'],
-                                              'install PACKAGE onto system')
-        self.settings.add_boolean_setting(['enable-dhcp'],
-                                          'enable DHCP on eth0')
-        self.settings.add_string_setting(['root-password'],
-                                         'set root password',
-                                         metavar='PASSWORD')
-        self.settings.add_string_setting(['customize'],
-                                         'run SCRIPT after setting up system',
-                                         metavar='SCRIPT')
-        self.settings.add_string_setting(['hostname'],
-                                         'set name to HOSTNAME (%default)',
-                                         metavar='HOSTNAME',
-                                         default='debian')
+        self.settings.boolean(['verbose'], 'report what is going on')
+        self.settings.string(['image'], 'put created disk image in FILE',
+                             metavar='FILE')
+        self.settings.bytesize(['size'],
+                               'create a disk image of size SIZE (%default)',
+                               metavar='SIZE',
+                               default='1G')
+        self.settings.string(['mirror'],
+                             'use MIRROR as package source (%default)',
+                             metavar='URL',
+                             default='http://cdn.debian.net/debian/')
+        self.settings.string(['arch'], 'architecture to use (%default)',
+                             metavar='ARCH',
+                             default=default_arch)
+        self.settings.string(['distribution'],
+                             'release to use (%default)',
+                             metavar='NAME',
+                             default='stable')
+        self.settings.string_list(['package'], 'install PACKAGE onto system')
+        self.settings.boolean(['enable-dhcp'], 'enable DHCP on eth0')
+        self.settings.string(['root-password'], 'set root password',
+                             metavar='PASSWORD')
+        self.settings.string(['customize'],
+                             'run SCRIPT after setting up system',
+                             metavar='SCRIPT')
+        self.settings.string(['hostname'],
+                             'set name to HOSTNAME (%default)',
+                             metavar='HOSTNAME',
+                             default='debian')
 
     def process_args(self, args):
         if not self.settings['image']:
