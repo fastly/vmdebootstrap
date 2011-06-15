@@ -82,7 +82,8 @@ class VmDebootstrap(cliapp.Application):
             self.setup_networking(rootdir)
             self.install_extlinux(rootdev, rootdir)
             self.customize(rootdir)
-        except:
+        except BaseException, e:
+            self.message('EEEK! Something bad happened...')
             self.cleanup()
             raise
         else:
