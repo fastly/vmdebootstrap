@@ -58,6 +58,9 @@ class VmDebootstrap(cliapp.Application):
                              'set name to HOSTNAME (%default)',
                              metavar='HOSTNAME',
                              default='debian')
+        self.settings.string_list(['user'],
+                                  'create USER with PASSWORD',
+                                  metavar='USER/PASSWORD')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -79,6 +82,7 @@ class VmDebootstrap(cliapp.Application):
             self.set_hostname(rootdir)
             self.create_fstab(rootdir)
             self.set_root_password(rootdir)
+            self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
             self.install_extlinux(rootdev, rootdir)
@@ -194,13 +198,28 @@ class VmDebootstrap(cliapp.Application):
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
             self.message('Setting root password')
-            encrypted = crypt.crypt(self.settings['root-password'], '..')
-            self.runcmd(['chroot', rootdir, 'usermod', '-p', encrypted, 
-                         'root'])
+            self.set_password(rootdir, 'root', self.settings['root-password'])
         else:
             self.message('Locking root password')
             self.runcmd(['chroot', rootdir, 'passwd', '-l', 'root'])
-        
+
+    def create_users(self, rootdir):
+        def create_user(user):
+            self.runcmd(['chroot', rootdir, 'adduser', '--gecos', user,
+                         '--disabled-password', user])
+
+        for userpass in self.settings['user']:
+            if '/' in userpass:
+                user, password = userpass.split('/', 1)
+                create_user(user)
+                self.set_password(rootdir, user, password)
+            else:
+                create_user(userpass)
+
+    def set_password(self, rootdir, user, password):
+        encrypted = crypt.crypt(password, '..')
+        self.runcmd(['chroot', rootdir, 'usermod', '-p', encrypted, user])
+
     def remove_udev_persistent_rules(self, rootdir):
         self.message('Removing udev persistent cd and net rules')
         for x in ['70-persistent-cd.rules', '70-persistent-net.rules']:
