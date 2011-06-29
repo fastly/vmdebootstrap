@@ -172,9 +172,8 @@ class VmDebootstrap(cliapp.Application):
 
     def set_hostname(self, rootdir):
         hostname = self.settings['hostname']
-        f = open(os.path.join(rootdir, 'etc', 'hostname'), 'w')
-        f.write(hostname)
-        f.close()
+        with open(os.path.join(rootdir, 'etc', 'hostname'), 'w') as f:
+            f.write(hostname)
 
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
