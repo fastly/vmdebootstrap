@@ -77,6 +77,7 @@ class VmDebootstrap(cliapp.Application):
             rootdir = self.mount(rootdev)
             self.debootstrap(rootdir)
             self.set_hostname(rootdir)
+            self.create_fstab(rootdir)
             self.set_root_password(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
@@ -183,6 +184,12 @@ class VmDebootstrap(cliapp.Application):
                 if line.startswith('127.0.0.1'):
                     line += ' %s' % hostname
                 f.write('%s\n' % line)
+
+    def create_fstab(self, rootdir):
+        fstab = os.path.join(rootdir, 'etc', 'fstab')
+        with open(fstab, 'w') as f:
+            f.write('proc /proc proc defaults 0 0\n')
+            f.write('/dev/sda1 / ext4 errors=remount-ro 0 1\n')
 
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
