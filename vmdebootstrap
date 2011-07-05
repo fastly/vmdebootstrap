@@ -161,7 +161,7 @@ class VmDebootstrap(cliapp.Application):
         self.message('Debootstrapping')
 
         if self.settings['arch'] == 'i386':
-            kernel_arch = 'i686'
+            kernel_arch = '686'
         else:
             kernel_arch = self.settings['arch']
         kernel_image = 'linux-image-2.6-%s' % kernel_arch
