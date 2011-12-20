@@ -17,9 +17,6 @@
 .SH NAME
 vmdebootstrap \- install basic Debian system into virtual disk image
 .SH SYNOPSIS
-.B vmdebootstrap
-.BR \-\-image =\fIFILE
-.RB [ options ]
 .SH DESCRIPTION
 .B vmdebootstrap
 installs a basic Debian system into a virtual disk image,
@@ -56,91 +53,6 @@ It has an empty root password.
 The image will not have networking configured.
 Set the root password before you configure networking.
 .SH OPTIONS
-.TP
-.BR \-\-help
-Show full list of options (this manual page may be incomplete).
-.TP
-.BR \-\-verbose
-Report what is going on.
-.TP
-.BR \-\-log =\fIFILE
-Write log to 
-.IR FILE .
-.TP
-.BR \-\-log\-level =\fILEVEL
-Write log messages of the given
-.I LEVEL
-or higher.
-Level is one of 
-.IR debug ,
-.IR info ,
-.IR warning ,
-.IR error ,
-.IR critical ,
-.IR fatal ,
-and defaults to
-.IR info .
-.TP
-.BR \-\-image =\fIFILE
-Put created disk image in
-.IR FILE .
-.TP
-.BR \-\-size =\fISIZE
-Create a disk image of the given
-.IR SIZE ,
-which can be given in bytes,
-kilobytes,
-gigabytes,
-etc,
-using the appropriate suffix.
-.TP
-.BR \-\-mirror =\fIURL
-Use the Debian mirror at
-.IR URL .
-You probably want to specify a local mirror, if you have one.
-Defaults to
-.IR http://cdn.debian.net/debian/ ,
-which should work fairly well for most people without a local mirror.
-.TP
-.BR \-\-arch =\fIARCH
-Use a given architecture.
-This only works if the host system can run binaries for the architecture,
-e.g., you can build an i386 image on amd64, but not arm.
-.TP
-.BR \-\-distribution =\fINAME
-Use a given release of Debian.
-.TP
-.BR \-\-package =\fIPACKAGE
-Install 
-.I PACKAGE
-on the system.
-Can be given multiple times.
-.TP
-.BR \-\-enable-dhcp
-Create an
-.I /etc/network/interfaces
-file that sets up DHCP on the eth0 interface.
-This means the system booted from the image will bring up networking
-automatically in typical environments.
-Without DHCP, only localhost networking is set up.
-.TP
-.BR \-\-root\-password =\fIPASSWORD
-Set password for root.
-The default is to disable root's password.
-.TP
-.BR \-\-customize =\fISCRIPT
-Run
-.I SCRIPT
-(typically, but not necessarily, a shell script)
-after setting up the new system image.
-The script will get a single parameters:
-the path to the root directory of the newly installed system.
-.TP
-.BR \-\-hostname =\fINAME
-Set system hostname to
-.IR NAME .
-The default is 
-.IR debian .
 .SH EXAMPLE
 To create an image for the stable release of Debian:
 .nf
