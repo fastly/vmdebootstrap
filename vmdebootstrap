@@ -48,6 +48,10 @@ class VmDebootstrap(cliapp.Application):
                              metavar='NAME',
                              default='stable')
         self.settings.string_list(['package'], 'install PACKAGE onto system')
+        self.settings.string_list(['custom-package'],
+                                  'install package in DEB file onto system '
+                                    '(not from mirror)',
+                                  metavar='DEB')
         self.settings.boolean(['enable-dhcp'], 'enable DHCP on eth0')
         self.settings.string(['root-password'], 'set root password',
                              metavar='PASSWORD')
@@ -86,6 +90,7 @@ class VmDebootstrap(cliapp.Application):
             self.debootstrap(rootdir)
             self.set_hostname(rootdir)
             self.create_fstab(rootdir)
+            self.install_debs(rootdir)
             self.set_root_password(rootdir)
             self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
@@ -201,6 +206,25 @@ class VmDebootstrap(cliapp.Application):
         with open(fstab, 'w') as f:
             f.write('proc /proc proc defaults 0 0\n')
             f.write('/dev/sda1 / ext4 errors=remount-ro 0 1\n')
+
+    def install_debs(self, rootdir):
+        if not self.settings['custom-package']:
+            return
+        self.message('Installing custom packages')
+        tmp = os.path.join(rootdir, 'tmp', 'install_debs')
+        os.mkdir(tmp)
+        for deb in self.settings['custom-package']:
+            shutil.copy(deb, tmp)
+        filenames = [os.path.join('/tmp/install_debs', os.path.basename(deb))
+                     for deb in self.settings['custom-package']]
+        out, err, exit = \
+            self.runcmd_unchecked(['chroot', rootdir, 'dpkg', '-i'] + filenames)
+        logging.debug('stdout:\n%s' % out)
+        logging.debug('stderr:\n%s' % err)
+        out = self.runcmd(['chroot', rootdir, 
+                     'apt-get', '-f', '--no-remove', 'install'])
+        logging.debug('stdout:\n%s' % out)
+        shutil.rmtree(tmp)
 
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
