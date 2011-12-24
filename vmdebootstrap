@@ -63,6 +63,9 @@ class VmDebootstrap(cliapp.Application):
                                   metavar='USER/PASSWORD')
         self.settings.boolean(['serial-console'], 
                               'configure image to use a serial console')
+        self.settings.boolean(['sudo'], 
+                              'install sudo, and if user is created, add them '
+                                'to sudo group')
 
     def process_args(self, args):
         if not self.settings['image']:
@@ -169,6 +172,8 @@ class VmDebootstrap(cliapp.Application):
         kernel_image = 'linux-image-2.6-%s' % kernel_arch
 
         include = [kernel_image] + self.settings['package']
+        if self.settings['sudo'] and 'sudo' not in include:
+            include.append('sudo')
 
         self.runcmd(['debootstrap', 
                      '--arch=%s' % self.settings['arch'],
@@ -209,6 +214,8 @@ class VmDebootstrap(cliapp.Application):
         def create_user(user):
             self.runcmd(['chroot', rootdir, 'adduser', '--gecos', user,
                          '--disabled-password', user])
+            if self.settings['sudo']:
+                self.runcmd(['chroot', rootdir, 'adduser', user, 'sudo'])
 
         for userpass in self.settings['user']:
             if '/' in userpass:
