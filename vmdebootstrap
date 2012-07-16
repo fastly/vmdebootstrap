@@ -55,6 +55,8 @@ class VmDebootstrap(cliapp.Application):
         self.settings.boolean(['enable-dhcp'], 'enable DHCP on eth0')
         self.settings.string(['root-password'], 'set root password',
                              metavar='PASSWORD')
+        self.settings.boolean(['lock-root-password'], 
+                              'lock root account so they cannot login?')
         self.settings.string(['customize'],
                              'run SCRIPT after setting up system',
                              metavar='SCRIPT')
@@ -99,10 +101,10 @@ class VmDebootstrap(cliapp.Application):
             self.customize(rootdir)
         except BaseException, e:
             self.message('EEEK! Something bad happened...')
-            self.cleanup()
+            self.cleanup_system()
             raise
         else:
-            self.cleanup()
+            self.cleanup_system()
 
     def message(self, msg):
         if self.settings['verbose']:
@@ -230,9 +232,12 @@ class VmDebootstrap(cliapp.Application):
         if self.settings['root-password']:
             self.message('Setting root password')
             self.set_password(rootdir, 'root', self.settings['root-password'])
-        else:
+        elif self.settings['lock-root-password']:
             self.message('Locking root password')
             self.runcmd(['chroot', rootdir, 'passwd', '-l', 'root'])
+        else:
+            self.message('Give root an empty password')
+            self.runcmd(['chroot', rootdir, 'passwd', '-d', 'root'])
 
     def create_users(self, rootdir):
         def create_user(user):
@@ -327,7 +332,7 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet %(kserial)s
         self.runcmd(['sync'])
         import time; time.sleep(2)
         
-    def cleanup(self):
+    def cleanup_system(self):
         # Clean up after any errors.
 
         self.message('Cleaning up')
