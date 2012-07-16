@@ -354,7 +354,8 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet %(kserial)s
         script = self.settings['customize']
         if script:
             self.message('Running customize script %s' % script)
-            self.runcmd([script, rootdir])
+            with open('/dev/tty', 'w') as tty:
+                cliapp.runcmd([script, rootdir], stdout=tty, stderr=tty)
 
 
 if __name__ == '__main__':
