@@ -108,6 +108,7 @@ class VmDebootstrap(cliapp.Application):
             self.cleanup_system()
 
     def message(self, msg):
+        logging.info(msg)
         if self.settings['verbose']:
             print msg
 
