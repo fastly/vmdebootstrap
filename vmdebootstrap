@@ -37,6 +37,8 @@ class VmDebootstrap(cliapp.Application):
                                'create a disk image of size SIZE (%default)',
                                metavar='SIZE',
                                default='1G')
+        self.settings.string(['tarball'], "tar up the disk's contents in FILE",
+                             metavar='FILE')
         self.settings.string(['mirror'],
                              'use MIRROR as package source (%default)',
                              metavar='URL',
@@ -75,21 +77,26 @@ class VmDebootstrap(cliapp.Application):
                                 'to sudo group')
 
     def process_args(self, args):
-        if not self.settings['image']:
-            raise cliapp.AppException('You must give image filename.')
-        if not self.settings['size']:
-            raise cliapp.AppException('You must give image size.')
+        if not self.settings['image'] and not self.settings['tarball']:
+            raise cliapp.AppException('You must give disk image filename, '
+                                      'or tarball filename')
+        if self.settings['image'] and not self.settings['size']:
+            raise cliapp.AppException('If disk image is specified, '
+                                      'You must give image size.')
 
         self.remove_dirs = []
         self.mount_points = []
 
         try:
-            self.create_empty_image()
-            self.partition_image()
-            self.install_mbr()
-            rootdev = self.setup_kpartx()
-            self.mkfs(rootdev)
-            rootdir = self.mount(rootdev)
+            if self.settings['image']:
+                self.create_empty_image()
+                self.partition_image()
+                self.install_mbr()
+                rootdev = self.setup_kpartx()
+                self.mkfs(rootdev)
+                rootdir = self.mount(rootdev)
+            else:
+                rootdir = self.mkdtemp()
             self.debootstrap(rootdir)
             self.set_hostname(rootdir)
             self.create_fstab(rootdir)
@@ -98,8 +105,11 @@ class VmDebootstrap(cliapp.Application):
             self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
-            self.install_extlinux(rootdev, rootdir)
+            if self.settings['image']:
+                self.install_extlinux(rootdev, rootdir)
             self.customize(rootdir)
+            if self.settings['tarball']:
+                self.create_tarball(rootdir)
         except BaseException, e:
             self.message('EEEK! Something bad happened...')
             self.cleanup_system()
@@ -343,10 +353,11 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet %(kserial)s
 
         self.message('Cleaning up')
 
-        for mount_point in self.mount_points:
-            self.runcmd(['umount', mount_point], ignore_fail=True)
+        if self.settings['image']:
+            for mount_point in self.mount_points:
+                self.runcmd(['umount', mount_point], ignore_fail=True)
 
-        self.runcmd(['kpartx', '-d', self.settings['image']], ignore_fail=True)
+            self.runcmd(['kpartx', '-d', self.settings['image']], ignore_fail=True)
         
         for dirname in self.remove_dirs:
             shutil.rmtree(dirname)
@@ -357,6 +368,12 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet %(kserial)s
             self.message('Running customize script %s' % script)
             with open('/dev/tty', 'w') as tty:
                 cliapp.runcmd([script, rootdir], stdout=tty, stderr=tty)
+
+    def create_tarball(self, rootdir):
+        # Create a tarball of the disk's contents
+        # shell out to runcmd since it more easily handles rootdir
+        self.message('Creating tarball of disk contents')
+        self.runcmd(['tar', '-cf', self.settings['tarball'], '-C', rootdir, '.'])
 
 
 if __name__ == '__main__':
