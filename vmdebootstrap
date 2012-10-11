@@ -188,12 +188,11 @@ class VmDebootstrap(cliapp.Application):
         if self.settings['sudo'] and 'sudo' not in include:
             include.append('sudo')
 
-        self.runcmd(['debootstrap', 
-                     '--arch=%s' % self.settings['arch'],
-                     '--include=%s' % ','.join(include),
-                     self.settings['distribution'],
-                     rootdir, 
-                     self.settings['mirror']])
+        args = ['debootstrap', '--arch=%s' % self.settings['arch']]
+        if include: args.append('--include=%s' % ','.join(include))
+        args += [self.settings['distribution'],
+                 rootdir, self.settings['mirror']]
+        self.runcmd(args)
 
     def set_hostname(self, rootdir):
         hostname = self.settings['hostname']
