@@ -99,8 +99,8 @@ class VmDebootstrap(cliapp.Application):
             self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
-            self.install_extlinux(rootdev, rootdir)
             self.customize(rootdir)
+            self.install_extlinux(rootdev, rootdir)
         except BaseException, e:
             self.message('EEEK! Something bad happened...')
             self.cleanup_system()
