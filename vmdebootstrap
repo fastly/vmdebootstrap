@@ -53,6 +53,7 @@ class VmDebootstrap(cliapp.Application):
                                   'install package in DEB file onto system '
                                     '(not from mirror)',
                                   metavar='DEB')
+        self.settings.boolean(['no-kernel'], 'do not install a linux package')
         self.settings.boolean(['enable-dhcp'], 'enable DHCP on eth0')
         self.settings.string(['root-password'], 'set root password',
                              metavar='PASSWORD')
@@ -174,13 +175,16 @@ class VmDebootstrap(cliapp.Application):
     def debootstrap(self, rootdir):
         self.message('Debootstrapping')
 
-        if self.settings['arch'] == 'i386':
-            kernel_arch = '686'
-        else:
-            kernel_arch = self.settings['arch']
-        kernel_image = 'linux-image-2.6-%s' % kernel_arch
+        include = self.settings['package']
 
-        include = [kernel_image] + self.settings['package']
+        if not self.settings['no-kernel']:
+            if self.settings['arch'] == 'i386':
+                kernel_arch = '686'
+            else:
+                kernel_arch = self.settings['arch']
+            kernel_image = 'linux-image-2.6-%s' % kernel_arch
+            include.append(kernel_image)
+
         if self.settings['sudo'] and 'sudo' not in include:
             include.append('sudo')
 
