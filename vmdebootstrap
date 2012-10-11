@@ -106,9 +106,9 @@ class VmDebootstrap(cliapp.Application):
             self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
             self.setup_networking(rootdir)
+            self.customize(rootdir)
             if self.settings['image']:
                 self.install_extlinux(rootdev, rootdir)
-            self.customize(rootdir)
             if self.settings['tarball']:
                 self.create_tarball(rootdir)
         except BaseException, e:
@@ -198,12 +198,11 @@ class VmDebootstrap(cliapp.Application):
         if self.settings['sudo'] and 'sudo' not in include:
             include.append('sudo')
 
-        self.runcmd(['debootstrap', 
-                     '--arch=%s' % self.settings['arch'],
-                     '--include=%s' % ','.join(include),
-                     self.settings['distribution'],
-                     rootdir, 
-                     self.settings['mirror']])
+        args = ['debootstrap', '--arch=%s' % self.settings['arch']]
+        if include: args.append('--include=%s' % ','.join(include))
+        args += [self.settings['distribution'],
+                 rootdir, self.settings['mirror']]
+        self.runcmd(args)
 
     def set_hostname(self, rootdir):
         hostname = self.settings['hostname']
