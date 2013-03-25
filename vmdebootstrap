@@ -329,7 +329,7 @@ timeout 1
 
 label linux
 kernel %(kernel)s
-append initrd=%(initrd)s root=UUID=%(uuid)s ro quiet %(kserial)s
+append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
 %(extserial)s
 ''' % {
     'kernel': kernel_image,
