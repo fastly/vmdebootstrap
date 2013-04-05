@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2011, 2012  Lars Wirzenius
+# Copyright 2011, 2012, 2013  Lars Wirzenius
 # Copyright 2012  Codethink Limited
 # 
 # This program is free software: you can redistribute it and/or modify
@@ -92,7 +92,6 @@ class VmDebootstrap(cliapp.Application):
             if self.settings['image']:
                 self.create_empty_image()
                 self.partition_image()
-                self.install_mbr()
                 rootdev = self.setup_kpartx()
                 self.mkfs(rootdev)
                 rootdir = self.mount(rootdev)
@@ -164,10 +163,6 @@ class VmDebootstrap(cliapp.Application):
                      'mkpart', 'primary', '0%', '100%'])
         self.runcmd(['parted', '-s', self.settings['image'],
                      'set', '1', 'boot', 'on'])
-
-    def install_mbr(self):
-        self.message('Installing MBR')
-        self.runcmd(['install-mbr', self.settings['image']])
 
     def setup_kpartx(self):
         out = self.runcmd(['kpartx', '-av', self.settings['image']])
