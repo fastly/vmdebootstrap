@@ -18,6 +18,7 @@ In order to use vmdebootstrap, you'll need a few things:
 * extlinux
 * qemu-img (in the qemu-utils package in Debian)
 * parted
+* mbr
 * kpartx
 * python-cliapp (see http://liw.fi/cliapp/)
 
