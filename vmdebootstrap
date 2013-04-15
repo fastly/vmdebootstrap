@@ -199,7 +199,8 @@ class VmDebootstrap(cliapp.Application):
             include.append('sudo')
 
         args = ['debootstrap', '--arch=%s' % self.settings['arch']]
-        if include: args.append('--include=%s' % ','.join(include))
+        if include:
+            args.append('--include=%s' % ','.join(include))
         args += [self.settings['distribution'],
                  rootdir, self.settings['mirror']]
         self.runcmd(args)
