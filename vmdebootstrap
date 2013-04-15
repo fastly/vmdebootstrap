@@ -185,6 +185,8 @@ class VmDebootstrap(cliapp.Application):
     def debootstrap(self, rootdir):
         self.message('Debootstrapping')
 
+        necessary_packages = ['acpid']
+
         include = self.settings['package']
 
         if not self.settings['no-kernel']:
@@ -199,8 +201,8 @@ class VmDebootstrap(cliapp.Application):
             include.append('sudo')
 
         args = ['debootstrap', '--arch=%s' % self.settings['arch']]
-        if include:
-            args.append('--include=%s' % ','.join(include))
+        args.append(
+            '--include=%s' % ','.join(necessary_packages + include))
         args += [self.settings['distribution'],
                  rootdir, self.settings['mirror']]
         self.runcmd(args)
