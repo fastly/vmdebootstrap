@@ -191,10 +191,10 @@ class VmDebootstrap(cliapp.Application):
 
         if not self.settings['no-kernel']:
             if self.settings['arch'] == 'i386':
-                kernel_arch = '686'
+                kernel_arch = '486'
             else:
                 kernel_arch = self.settings['arch']
-            kernel_image = 'linux-image-2.6-%s' % kernel_arch
+            kernel_image = 'linux-image-%s' % kernel_arch
             include.append(kernel_image)
 
         if self.settings['sudo'] and 'sudo' not in include:
