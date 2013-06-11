@@ -115,6 +115,7 @@ class VmDebootstrap(cliapp.Application):
             self.customize(rootdir)
             if self.settings['image']:
                 self.install_extlinux(rootdev, rootdir)
+                self.optimize_image(rootdir)
             if self.settings['tarball']:
                 self.create_tarball(rootdir)
         except BaseException, e:
@@ -364,7 +365,16 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
         self.runcmd(['extlinux', '--install', rootdir])
         self.runcmd(['sync'])
         import time; time.sleep(2)
-        
+
+    def optimize_image(self, rootdir):
+        """
+        Filing up the image with zeros will increase its compression rate
+        """
+        zeros = os.path.join(rootdir, 'ZEROS')
+        self.runcmd_unchecked(['dd', 'if=/dev/zero', 'of=' + zeros, 'bs=1M'])
+        self.runcmd(['rm', '-f', zeros])
+
+
     def cleanup_system(self):
         # Clean up after any errors.
 
