@@ -73,6 +73,11 @@ class VmDebootstrap(cliapp.Application):
                                   metavar='USER/PASSWORD')
         self.settings.boolean(['serial-console'], 
                               'configure image to use a serial console')
+        self.settings.string(['serial-console-command'],
+                             'command to manage the serial console, appended '
+                               'to /etc/inittab (%default)',
+                             metavar='COMMAND',
+                             default='/sbin/getty -L ttyS0 115200 vt100')
         self.settings.boolean(['sudo'], 
                               'install sudo, and if user is created, add them '
                                 'to sudo group')
@@ -345,10 +350,11 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
         f.close()
         
         if self.settings['serial-console']:
+            serial_command = self.settings['serial-console-command']
             logging.debug('adding getty to serial console')
             inittab = os.path.join(rootdir, 'etc/inittab')
             with open(inittab, 'a') as f:
-                f.write('\nS0:23:respawn:/sbin/getty -L ttyS0 115200 vt100\n')
+                f.write('\nS0:23:respawn:%s\n' % serial_command)
 
         self.runcmd(['extlinux', '--install', rootdir])
         self.runcmd(['sync'])
