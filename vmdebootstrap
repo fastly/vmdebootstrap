@@ -107,6 +107,7 @@ class VmDebootstrap(cliapp.Application):
             self.set_hostname(rootdir)
             self.create_fstab(rootdir)
             self.install_debs(rootdir)
+            self.cleanup_apt_cache(rootdir)
             self.set_root_password(rootdir)
             self.create_users(rootdir)
             self.remove_udev_persistent_rules(rootdir)
@@ -250,6 +251,10 @@ class VmDebootstrap(cliapp.Application):
                      'apt-get', '-f', '--no-remove', 'install'])
         logging.debug('stdout:\n%s' % out)
         shutil.rmtree(tmp)
+
+    def cleanup_apt_cache(self, rootdir):
+        out = self.runcmd(['chroot', rootdir, 'apt-get', 'clean'])
+        logging.debug('stdout:\n%s' % out)
 
     def set_root_password(self, rootdir):
         if self.settings['root-password']:
