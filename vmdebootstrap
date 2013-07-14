@@ -310,7 +310,7 @@ class VmDebootstrap(cliapp.Application):
         
         if self.settings['enable-dhcp']:
             f.write('\n')
-            f.write('allow-hotplug eth0\n')
+            f.write('auto eth0\n')
             f.write('iface eth0 inet dhcp\n')
             
         f.close()
