@@ -37,6 +37,18 @@ class VmDebootstrap(cliapp.Application):
                                'create a disk image of size SIZE (%default)',
                                metavar='SIZE',
                                default='1G')
+        self.settings.bytesize(['bootsize'],
+                               'create boot partition of size SIZE (%default)',
+                               metavar='BOOTSIZE',
+                               default='0%')
+        self.settings.string(['boottype'],
+                             'specify file system type for /boot/',
+                             default='ext2')
+        self.settings.string(['foreign'],
+                             'set up foreign debootstrap environment using provided program (ie binfmt handler)')
+        self.settings.string(['variant'],
+                             'select debootstrap variant it not using the default')
+        self.settings.boolean(['no-extlinux'], 'do not install extlinux')
         self.settings.string(['tarball'], "tar up the disk's contents in FILE",
                              metavar='FILE')
         self.settings.string(['mirror'],
@@ -98,9 +110,18 @@ class VmDebootstrap(cliapp.Application):
                 self.create_empty_image()
                 self.partition_image()
                 self.install_mbr()
-                rootdev = self.setup_kpartx()
+                (rootdev,bootdev) = self.setup_kpartx()
                 self.mkfs(rootdev)
                 rootdir = self.mount(rootdev)
+                if bootdev:
+                    if self.settings['boottype']:
+                        fstype = self.settings['boottype']
+                    else:
+                        fstype = 'ext2'
+                    self.mkfs(bootdev, type=fstype)
+                    bootdir = '%s/%s' % (rootdir, 'boot/')
+                    os.mkdir(bootdir)
+                    bootdir = self.mount(bootdev, bootdir)
             else:
                 rootdir = self.mkdtemp()
             self.debootstrap(rootdir)
@@ -114,8 +135,14 @@ class VmDebootstrap(cliapp.Application):
             self.setup_networking(rootdir)
             self.customize(rootdir)
             if self.settings['image']:
-                self.install_extlinux(rootdev, rootdir)
+                if not self.settings['no-extlinux']:
+                    self.install_extlinux(rootdev, rootdir)
                 self.optimize_image(rootdir)
+
+            if self.settings['foreign']:
+                os.unlink('%s/usr/bin/%s' %
+                          (rootdir, os.path.basename(self.settings['foreign'])))
+
             if self.settings['tarball']:
                 self.create_tarball(rootdir)
         except BaseException, e:
@@ -149,9 +176,12 @@ class VmDebootstrap(cliapp.Application):
         logging.debug('mkdir %s' % dirname)
         return dirname
     
-    def mount(self, device):
+    def mount(self, device, path=None):
         self.message('Mounting %s' % device)
-        mount_point = self.mkdtemp()
+        if not path:
+            mount_point = self.mkdtemp()
+        else:
+            mount_point = path
         self.runcmd(['mount', device, mount_point])
         self.mount_points.append(mount_point)
         logging.debug('mounted %s on %s' % (device, mount_point))
@@ -167,8 +197,14 @@ class VmDebootstrap(cliapp.Application):
         self.message('Creating partitions')
         self.runcmd(['parted', '-s', self.settings['image'],
                      'mklabel', 'msdos'])
+        if self.settings['bootsize'] and self.settings['bootsize'] is not '0%':
+            bootsize=str(self.settings['bootsize']/(1024*1024))
+            self.runcmd(['parted', '-s', self.settings['image'],
+                         'mkpart', 'primary', 'fat16', '0', bootsize])
+        else:
+            bootsize='0%'
         self.runcmd(['parted', '-s', self.settings['image'],
-                     'mkpart', 'primary', '0%', '100%'])
+                     'mkpart', 'primary', bootsize, '100%'])
         self.runcmd(['parted', '-s', self.settings['image'],
                      'set', '1', 'boot', 'on'])
 
@@ -178,21 +214,35 @@ class VmDebootstrap(cliapp.Application):
 
     def setup_kpartx(self):
         out = self.runcmd(['kpartx', '-av', self.settings['image']])
+        if self.settings['bootsize']:
+            bootindex = 0
+            rootindex = 1
+            parts = 2
+        else:
+            rootindex = 0
+            parts = 1
+            boot = None
         devices = [line.split()[2]
                    for line in out.splitlines()
                    if line.startswith('add map ')]
-        if len(devices) != 1:
+        if len(devices) != parts:
             raise cliapp.AppException('Surprising number of partitions')
-        return '/dev/mapper/%s' % devices[0]
+        root = '/dev/mapper/%s' % devices[rootindex]
+        if self.settings['bootsize']:
+            boot = '/dev/mapper/%s' % devices[bootindex]
+        return (root,boot)
 
-    def mkfs(self, device):
+    def mkfs(self, device, type='ext2'):
         self.message('Creating filesystem')
-        self.runcmd(['mkfs', '-t', 'ext2', device])
+        self.runcmd(['mkfs', '-t', type, device])
     
     def debootstrap(self, rootdir):
         self.message('Debootstrapping')
 
-        necessary_packages = ['acpid']
+        if self.settings['foreign']:
+            necessary_packages = []
+        else:
+            necessary_packages = ['acpid']
 
         include = self.settings['package']
 
@@ -210,9 +260,20 @@ class VmDebootstrap(cliapp.Application):
         args = ['debootstrap', '--arch=%s' % self.settings['arch']]
         args.append(
             '--include=%s' % ','.join(necessary_packages + include))
+        if self.settings['foreign']:
+            args.append('--foreign')
+        if self.settings['variant']:
+            args.append('--variant')
+            args.append(self.settings['variant'])
         args += [self.settings['distribution'],
                  rootdir, self.settings['mirror']]
         self.runcmd(args)
+        if self.settings['foreign']:
+            # First copy the binfmt handler over
+            shutil.copy(self.settings['foreign'], '%s/usr/bin/' % rootdir)
+            # Next, run the package install scripts etc.
+            self.runcmd(['chroot', rootdir,
+                         '/debootstrap/debootstrap', '--second-stage'])
 
     def set_hostname(self, rootdir):
         hostname = self.settings['hostname']
@@ -380,8 +441,10 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
 
         self.message('Cleaning up')
 
+        # Umount in the reverse mount order 
         if self.settings['image']:
-            for mount_point in self.mount_points:
+            for i in xrange(len(self.mount_points) - 1, -1, -1):
+                mount_point = self.mount_points[i]
                 self.runcmd(['umount', mount_point], ignore_fail=True)
 
             self.runcmd(['kpartx', '-d', self.settings['image']], ignore_fail=True)
