@@ -25,6 +25,9 @@ import subprocess
 import tempfile
 
 
+__version__ = '0.1.0'
+
+
 class VmDebootstrap(cliapp.Application):
 
     def add_settings(self):
@@ -467,5 +470,5 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
 
 
 if __name__ == '__main__':
-    VmDebootstrap().run()
+    VmDebootstrap(version=__version__).run()
 
