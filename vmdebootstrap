@@ -109,19 +109,20 @@ class VmDebootstrap(cliapp.Application):
         self.mount_points = []
 
         try:
+            roottype = 'ext4'
             if self.settings['image']:
                 self.create_empty_image()
                 self.partition_image()
                 self.install_mbr()
                 (rootdev,bootdev) = self.setup_kpartx()
-                self.mkfs(rootdev)
+                self.mkfs(rootdev, type=roottype)
                 rootdir = self.mount(rootdev)
                 if bootdev:
                     if self.settings['boottype']:
-                        fstype = self.settings['boottype']
+                        boottype = self.settings['boottype']
                     else:
-                        fstype = 'ext2'
-                    self.mkfs(bootdev, type=fstype)
+                        boottype = 'ext2'
+                    self.mkfs(bootdev, type=boottype)
                     bootdir = '%s/%s' % (rootdir, 'boot/')
                     os.mkdir(bootdir)
                     bootdir = self.mount(bootdev, bootdir)
@@ -129,7 +130,7 @@ class VmDebootstrap(cliapp.Application):
                 rootdir = self.mkdtemp()
             self.debootstrap(rootdir)
             self.set_hostname(rootdir)
-            self.create_fstab(rootdir)
+            self.create_fstab(rootdir, rootdev, roottype, bootdev, boottype)
             self.install_debs(rootdir)
             self.cleanup_apt_cache(rootdir)
             self.set_root_password(rootdir)
@@ -180,11 +181,11 @@ class VmDebootstrap(cliapp.Application):
         return dirname
     
     def mount(self, device, path=None):
-        self.message('Mounting %s' % device)
         if not path:
             mount_point = self.mkdtemp()
         else:
             mount_point = path
+        self.message('Mounting %s on %s' % (device,mount_point))
         self.runcmd(['mount', device, mount_point])
         self.mount_points.append(mount_point)
         logging.debug('mounted %s on %s' % (device, mount_point))
@@ -235,8 +236,8 @@ class VmDebootstrap(cliapp.Application):
             boot = '/dev/mapper/%s' % devices[bootindex]
         return (root,boot)
 
-    def mkfs(self, device, type='ext2'):
-        self.message('Creating filesystem')
+    def mkfs(self, device, type):
+        self.message('Creating filesystem %s' % type)
         self.runcmd(['mkfs', '-t', type, device])
     
     def debootstrap(self, rootdir):
@@ -292,11 +293,28 @@ class VmDebootstrap(cliapp.Application):
                     line += ' %s' % hostname
                 f.write('%s\n' % line)
 
-    def create_fstab(self, rootdir):
+    def create_fstab(self, rootdir, rootdev, roottype, bootdev, boottype):
+        def fsuuid(device):
+            out = self.runcmd(['blkid', '-c', '/dev/null', '-o', 'value',
+                               '-s', 'UUID', device])
+            return out.splitlines()[0].strip()
+
+        if rootdev:
+            rootdevstr = 'UUID=%s' % fsuuid(rootdev)
+        else:
+            rootdevstr = '/dev/sda1'
+
+        if bootdev:
+            bootdevstr = 'UUID=%s' % fsuuid(bootdev)
+        else:
+            bootdevstr = None
+
         fstab = os.path.join(rootdir, 'etc', 'fstab')
         with open(fstab, 'w') as f:
             f.write('proc /proc proc defaults 0 0\n')
-            f.write('/dev/sda1 / ext4 errors=remount-ro 0 1\n')
+            f.write('%s / %s errors=remount-ro 0 1\n' % (rootdevstr, roottype))
+            if bootdevstr:
+                f.write('%s /boot %s errors=remount-ro 0 2\n' % (bootdevstr, boottype))
 
     def install_debs(self, rootdir):
         if not self.settings['custom-package']:
