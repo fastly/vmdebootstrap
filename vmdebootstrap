@@ -109,7 +109,10 @@ class VmDebootstrap(cliapp.Application):
         self.mount_points = []
 
         try:
+            rootdev = None
             roottype = 'ext4'
+            bootdev = None
+            boottype = None
             if self.settings['image']:
                 self.create_empty_image()
                 self.partition_image()
