@@ -26,7 +26,8 @@ In order to use vmdebootstrap, you'll need a few things:
 Legalese
 --------
 
-Copyright 2011  Lars Wirzenius
+Copyright 2011-2013  Lars Wirzenius
+Copyright 2012  Codethink Limited
  
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
