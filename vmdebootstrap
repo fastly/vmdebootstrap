@@ -220,7 +220,7 @@ class VmDebootstrap(cliapp.Application):
         self.runcmd(['install-mbr', self.settings['image']])
 
     def setup_kpartx(self):
-        out = self.runcmd(['kpartx', '-av', self.settings['image']])
+        out = self.runcmd(['kpartx', '-avs', self.settings['image']])
         if self.settings['bootsize']:
             bootindex = 0
             rootindex = 1
