@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 
 
 __version__ = '0.2'
@@ -469,10 +470,15 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
         if self.settings['image']:
             for i in xrange(len(self.mount_points) - 1, -1, -1):
                 mount_point = self.mount_points[i]
-                self.runcmd(['umount', mount_point], ignore_fail=True)
+                try:
+                    self.runcmd(['umount', mount_point], ignore_fail=False)
+                except cliapp.AppException:
+                    logging.debug("umount failed, sleeping and trying again")
+                    time.sleep(5)
+                    self.runcmd(['umount', mount_point], ignore_fail=False)
 
             self.runcmd(['kpartx', '-d', self.settings['image']], ignore_fail=True)
-        
+
         for dirname in self.remove_dirs:
             shutil.rmtree(dirname)
 
