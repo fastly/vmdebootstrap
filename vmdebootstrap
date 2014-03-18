@@ -52,7 +52,10 @@ class VmDebootstrap(cliapp.Application):
                              'set up foreign debootstrap environment using provided program (ie binfmt handler)')
         self.settings.string(['variant'],
                              'select debootstrap variant it not using the default')
-        self.settings.boolean(['no-extlinux'], 'do not install extlinux')
+        self.settings.boolean(
+            ['extlinux'],
+            'install extlinux?',
+            default=True)
         self.settings.string(['tarball'], "tar up the disk's contents in FILE",
                              metavar='FILE')
         self.settings.string(['mirror'],
