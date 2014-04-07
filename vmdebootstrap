@@ -292,13 +292,16 @@ class VmDebootstrap(cliapp.Application):
             f.write('%s\n' % hostname)
             
         etc_hosts = os.path.join(rootdir, 'etc', 'hosts')
-        with open(etc_hosts, 'r') as f:
-            data = f.read()
-        with open(etc_hosts, 'w') as f:
-            for line in data.splitlines():
-                if line.startswith('127.0.0.1'):
-                    line += ' %s' % hostname
-                f.write('%s\n' % line)
+        try:
+            with open(etc_hosts, 'r') as f:
+                data = f.read()
+            with open(etc_hosts, 'w') as f:
+                for line in data.splitlines():
+                    if line.startswith('127.0.0.1'):
+                        line += ' %s' % hostname
+                    f.write('%s\n' % line)
+        except IOError, e:
+            pass
 
     def create_fstab(self, rootdir, rootdev, roottype, bootdev, boottype):
         def fsuuid(device):
