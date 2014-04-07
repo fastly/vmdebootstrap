@@ -146,7 +146,7 @@ class VmDebootstrap(cliapp.Application):
             self.setup_networking(rootdir)
             self.customize(rootdir)
             if self.settings['image']:
-                if not self.settings['no-extlinux']:
+                if self.settings['extlinux']:
                     self.install_extlinux(rootdev, rootdir)
                 self.optimize_image(rootdir)
 
