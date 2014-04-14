@@ -1,0 +1,32 @@
+vmdebootstrap (0.2-2) unstable; urgency=medium
+
+  * Make kpartx wait whilst the partitions are created.
+    (Closes: #741407)
+  * Update homepage location.
+  * Add a check on the cleanup umount and re-try if
+    unable to complete. (Closes: #740310)
+
+ -- Neil Williams <codehelp@debian.org>  Sat, 15 Mar 2014 13:25:21 +0000
+
+vmdebootstrap (0.2-1) unstable; urgency=medium
+
+  * Update for new upstream location and new
+    upstream release. (Closes: #728138)
+  * Adapt copyright and watch file to new upstream location.
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 21 Nov 2013 22:49:12 +0000
+
+vmdebootstrap (0.1.0-2) unstable; urgency=low
+
+  * Restrict the package to the usable architectures,
+    amd64 and i386 only. (Closes: #722921)
+  * Fix problem with the orig.tar.gz differing from the
+    0.1.0 upstream tag. (Closes: #721668)
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 15 Sep 2013 20:27:32 +0100
+
+vmdebootstrap (0.1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #711794)
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 23 Jul 2013 13:16:41 +0100

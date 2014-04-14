@@ -1,0 +1,2 @@
+version=3
+http://git.liw.fi/cgi-bin/cgit/cgit.cgi/vmdebootstrap/refs/ /cgi-bin/cgit/cgit.cgi/vmdebootstrap/snapshot/vmdebootstrap-(.+)\.tar\.gz

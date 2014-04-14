@@ -1,0 +1,21 @@
+Source: vmdebootstrap
+Section: admin
+Priority: extra
+Maintainer: Neil Williams <codehelp@debian.org>
+Uploaders: Lars Wirzenius <liw@liw.fi>,
+ Antonio Terceiro <terceiro@debian.org>
+Build-Depends: debhelper (>= 8.0.0),
+ python | python-all | python-dev | python-all-dev
+X-Python-Version: 2.7
+Standards-Version: 3.9.5
+Homepage: http://git.liw.fi/cgi-bin/cgit/cgit.cgi/vmdebootstrap/
+Vcs-Git: git://github.com/codehelp/vmdebootstrap-debian.git
+Vcs-Browser: https://github.com/codehelp/vmdebootstrap-debian/tree/master/debian
+
+Package: vmdebootstrap
+Architecture: amd64 i386
+Depends: debootstrap, extlinux (<< 3:6.00~), qemu-utils,
+ parted, mbr, kpartx, python-cliapp, ${python:Depends}, ${misc:Depends}
+Description: Bootstrap Debian into a (virtual machine) disk image
+ vmdebootstrap is a wrapper around debootstrap to install Debian
+ into a disk image, which can be used with a virtual machine (such as KVM).
