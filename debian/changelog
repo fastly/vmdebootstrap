@@ -1,3 +1,9 @@
+vmdebootstrap (0.2.0fastly1) unstable; urgency=medium
+
+  * Build as native.
+
+ -- Tollef Fog Heen <tfheen@fastly.com>  Mon, 14 Apr 2014 13:39:48 +0200
+
 vmdebootstrap (0.2-2) unstable; urgency=medium
 
   * Make kpartx wait whilst the partitions are created.
