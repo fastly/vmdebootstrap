@@ -493,7 +493,7 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
         if script:
             self.message('Running customize script %s' % script)
 #            with open('/dev/tty', 'w') as tty:
-            cliapp.runcmd([script, rootdir], stdout=tty, stderr=tty)
+            cliapp.runcmd([script, rootdir])
 
     def create_tarball(self, rootdir):
         # Create a tarball of the disk's contents

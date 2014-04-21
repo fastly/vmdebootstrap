@@ -1,3 +1,9 @@
+vmdebootstrap (0.2.0fastly3) unstable; urgency=medium
+
+  * Fix syntax error.
+
+ -- Tollef Fog Heen <tfheen@fastly.com>  Mon, 21 Apr 2014 22:00:10 +0200
+
 vmdebootstrap (0.2.0fastly2) unstable; urgency=medium
 
   * Drop with tty to see if we can make this run well in a hacked-together
