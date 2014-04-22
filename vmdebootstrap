@@ -278,7 +278,7 @@ class VmDebootstrap(cliapp.Application):
             args.append(self.settings['variant'])
         args += [self.settings['distribution'],
                  rootdir, self.settings['mirror']]
-        self.runcmd(args)
+        cliapp.runcmd(args, stdout=None, stderr=None)
         if self.settings['foreign']:
             # First copy the binfmt handler over
             shutil.copy(self.settings['foreign'], '%s/usr/bin/' % rootdir)
@@ -493,7 +493,7 @@ append initrd=%(initrd)s root=UUID=%(uuid)s ro %(kserial)s
         if script:
             self.message('Running customize script %s' % script)
 #            with open('/dev/tty', 'w') as tty:
-            cliapp.runcmd([script, rootdir])
+            cliapp.runcmd([script, rootdir], stdout=None, stderr=None)
 
     def create_tarball(self, rootdir):
         # Create a tarball of the disk's contents

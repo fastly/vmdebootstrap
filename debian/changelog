@@ -1,3 +1,9 @@
+vmdebootstrap (0.2.0fastly4) unstable; urgency=medium
+
+  * Add a few stdout=None and stderr=None to get more progress output.
+
+ -- Tollef Fog Heen <tfheen@fastly.com>  Tue, 22 Apr 2014 09:40:14 +0200
+
 vmdebootstrap (0.2.0fastly3) unstable; urgency=medium
 
   * Fix syntax error.
